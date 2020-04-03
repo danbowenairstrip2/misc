@@ -23,16 +23,34 @@ namespace DynamicHostTest
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             _taskCancellationTokenSource = new CancellationTokenSource();
+            _taskCancellationTokenSource.Token.Register(() => _logger.LogDebug("SubWorker {string} taskCancellationToken canceled."));
+
             _logger.LogInformation("SubWorker {string} starting.", _subWorkerString, DateTimeOffset.Now);
 
-            var task=Task.Run(async () =>
+            var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _taskCancellationTokenSource.Token);
+            linkedCancellationTokenSource.Token.Register(() => _logger.LogDebug("SubWorker {string} linkkedCancellationToken canceled."));
+
+            var task =Task.Run(async () =>
             {
-                while (!_taskCancellationTokenSource.IsCancellationRequested || cancellationToken.IsCancellationRequested)
+                try
                 {
-                    _logger.LogDebug("SubWorker {s} running at: {time}", _subWorkerString, DateTimeOffset.Now);
-                    await Task.Delay(1000, cancellationToken);
+                    while (!_taskCancellationTokenSource.IsCancellationRequested || cancellationToken.IsCancellationRequested)
+                    {
+                        _logger.LogDebug("SubWorker {s} running at: {time}", _subWorkerString, DateTimeOffset.Now);
+                        await Task.Delay(1000, cancellationToken);
+                    }
+
+                    _logger.LogDebug("Subworker {s} task ended.", _subWorkerString);
                 }
-            },_taskCancellationTokenSource.Token);
+                catch (OperationCanceledException)
+                {
+                    _logger.LogDebug("Subworker {s} task canceled.", _subWorkerString);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("Subworker {s} task exception {e}.", _subWorkerString, e.ToString());
+                }
+            }, linkedCancellationTokenSource.Token);
 
             await Task.CompletedTask;
         }
