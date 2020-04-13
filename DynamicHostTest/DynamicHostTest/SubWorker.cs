@@ -28,9 +28,9 @@ namespace DynamicHostTest
             _logger.LogInformation("SubWorker {string} starting.", _subWorkerString, DateTimeOffset.Now);
 
             var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _taskCancellationTokenSource.Token);
-            linkedCancellationTokenSource.Token.Register(() => _logger.LogDebug("SubWorker {string} linkkedCancellationToken canceled."));
+            linkedCancellationTokenSource.Token.Register(() => _logger.LogDebug("SubWorker {string} linkedCancellationToken canceled.", _subWorkerString));
 
-            var task =Task.Run(async () =>
+            var task= Task.Run(async () =>
             {
                 try
                 {
