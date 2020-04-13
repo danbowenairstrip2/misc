@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace DynamicHostTest2
 {
@@ -38,7 +39,7 @@ namespace DynamicHostTest2
             {
                 while (!_taskCancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    _logger.LogDebug("SelfHostA is running.");
+                    _logger.LogDebug($"SelfHostA is running at {DateTimeOffset.Now}");
                     await Task.Delay(1000);
                 }
             },_taskCancellationTokenSource.Token).ContinueWith((s)=>_logger.LogDebug("SelfHostA task loop stopped."));
@@ -60,7 +61,7 @@ namespace DynamicHostTest2
                 .ConfigureLogging(logging =>
                 {
                     logging.ClearProviders();
-                    logging.AddConsole();
+                    logging.AddConsole((options)=>options.TimestampFormat="HH:mm:ss.ff ");
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
