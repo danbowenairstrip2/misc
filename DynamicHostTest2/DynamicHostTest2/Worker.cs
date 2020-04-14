@@ -29,16 +29,13 @@ namespace DynamicHostTest2
                 _cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
                 _cts.Token.Register(() => _logger.LogDebug("Worker cancellation token canceled."));
 
-                _logger.LogDebug("Starting SelfHostA");
-                await _selfHostA.StartAsync(_cts.Token);
-
-                bool isSubWorkerRunning = true;
+                bool isSubWorkerRunning = false;
                 int i = 0;
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     i++;
                     _logger.LogDebug("Worker running at: {time}", DateTimeOffset.Now);
-                    await Task.Delay(3000, _cts.Token);
+                    await Task.Delay(1500, _cts.Token);
                     if (i % 4 == 0)
                     {
                         if (isSubWorkerRunning)
@@ -49,7 +46,7 @@ namespace DynamicHostTest2
                         }
                         else
                         {
-                            _logger.LogInformation("Restarting SelfHostA.");
+                            _logger.LogInformation("Starting SelfHostA.");
                             await _selfHostA.StartAsync(_cts.Token);
                             isSubWorkerRunning = true;
                         }
@@ -60,7 +57,6 @@ namespace DynamicHostTest2
                         //throwing exception just to see what happens
                         throw new Exception("AllDoneException");
                     }
-
                 }
 
                 _logger.LogInformation("Worker stopped.");
@@ -70,13 +66,14 @@ namespace DynamicHostTest2
             {
                 _logger.LogError("Worker exception {e}", e.ToString());
                 _cts.Cancel();
-//                throw;
             }
 
             _logger.LogInformation("Worker ExecuteAsync done. Disposing SelfHostA.");
             _selfHostA.Dispose();
+            
             _logger.LogInformation("Calling StopApplication.");
             _hostApplicationLifetime.StopApplication();
+
         }
     }
 }
